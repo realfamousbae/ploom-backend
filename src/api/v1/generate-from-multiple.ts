@@ -43,7 +43,7 @@ export function generateFromMultipleImage(
     });
 
     response.status(Code.OK)
-      .json({ message: 'Image uploaded successfully.' });
+      .json({ message: 'Images uploaded successfully.' });
   } catch {
       return response.json({ message: 'user_id parameter must be a numeric value.' });
   }

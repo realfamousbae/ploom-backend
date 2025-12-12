@@ -1,3 +1,4 @@
+import * as aiApiRequests from './ai-api-requests.ts';
 import * as databaseFiller from './database-filler.ts';
 import * as fse from './fse.ts';
 
@@ -9,7 +10,7 @@ interface TestModule {
   runTest(): void;
 }
 
-const testModules: TestModule[] = [databaseFiller, fse];
+const testModules: TestModule[] = [aiApiRequests, databaseFiller, fse];
 
 function runAllTests(): void {
   for (const module of testModules) {
