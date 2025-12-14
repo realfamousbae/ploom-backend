@@ -1,5 +1,6 @@
 import Database, { type Database as DatabaseType } from 'better-sqlite3';
 
+import { type Config } from '../config.ts';
 import { type Dictionary, stringifyWithRules } from '../types/types.ts';
 
 import { readFileSync } from 'fs';
@@ -25,6 +26,7 @@ interface Generation extends Dictionary {
 }
 
 export class ApiDatabase {
+  private readonly config: Config;
   private readonly driver: DatabaseType;
 
   private makeQueryEqualities(values: RowType): string[] {
@@ -96,15 +98,15 @@ export class ApiDatabase {
     return query.get() !== undefined;
   }
 
-  public constructor() {
-    // FIXME: `process.env.DATABASE_FILE` should be replaced with typesafe feature.
-    this.driver = new Database(process.env.DATABASE_FILE!); 
+  public constructor(config: Config) {
+    this.config = config;
+
+    this.driver = new Database(this.config.database.file); 
     this.driver.pragma('journal_mode = WAL');
   }
 
   public checkTables(): void {
-    // FIXME: `process.env.DATABASE_SCHEMA` should be replaced with typesafe feature.
-    const initdriverQuery = readFileSync(process.env.DATABASE_SCHEMA!, 'utf-8'); 
+    const initdriverQuery = readFileSync(this.config.database.shema, 'utf-8'); 
     this.driver.exec(initdriverQuery);
   }
 

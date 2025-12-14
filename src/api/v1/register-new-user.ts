@@ -22,7 +22,7 @@ export function registerNewUser(request: Request, response: Response, db: ApiDat
   if (request.file) {
     user.profile_image_path = joinWithCwd('/public/profile_images', request.file.filename);
   }
-  if (db.isUserExists({ email: user.email }, 'OR')) { // Verification by email.
+  if (db.isUserExists({ email: user.email })) { // 'OR' | Verification by email.
     return response.json({ message: 'User with provided registration data already exist.' });
   }
 

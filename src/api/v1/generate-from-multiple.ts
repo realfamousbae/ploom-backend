@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { ApiDatabase } from '../../models/database.ts';
 import { Code, joinWithCwd, maxUploadingFileSize } from '../../types/types.ts';
 
-export function generateFromMultipleImage(
+export function generateFromMultipleImages(
   request: Request, 
   response: Response,
   db: ApiDatabase

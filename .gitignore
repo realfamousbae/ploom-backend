@@ -1,6 +1,7 @@
 # Files:
 # /.env
 /db/main.sqlite*
+/config.toml
 /package-lock.json
 
 # Folders:

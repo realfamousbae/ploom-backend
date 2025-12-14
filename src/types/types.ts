@@ -3,6 +3,17 @@ import { InvalidPortError } from './errors.ts';
 import { join } from 'path';
 import { cwd } from 'process';
 
+export const Code = {
+  OK: 200,
+  BadRequest: 500
+} as const;
+
+export type ResponseCode = typeof Code[keyof typeof Code];
+
+export interface Dictionary {
+  [key: string]: any;
+}
+
 export const allowedFileExtensions = ['jpeg', 'jpg', 'png'];
 
 /**
@@ -17,17 +28,6 @@ export const apiPaths = [
   '/api/v1/register-new-user'
 ];
 
-export const Code = {
-  OK: 200,
-  BadRequest: 500
-} as const;
-
-export type ResponseCode = typeof Code[keyof typeof Code];
-
-export interface Dictionary {
-  [key: string]: any;
-}
-
 /**
  * May be this is sh*t? :)))
  * @param filepath Path of file.
@@ -36,18 +36,21 @@ export interface Dictionary {
 export const joinWithCwd = (...parts: string[]) => join(cwd(), ...parts);
 
 export function checkPort(value: number): number | never {
-  if (value.toString().length != 4) {
+  if (value.toString().length !== 4) {
     throw new InvalidPortError('Server port value must be in range between 1000 and 9999.');
   }
 
   return value;
 }
 
-export function checkFileExtension(filename: string): boolean {
+/**
+ * It is assumed that the file name is correct and ends with an `.extension`.
+ * @param filename `string` file name.
+ * @returns `string` file extension without a dot (`.`).
+ */
+export function getFileExtension(filename: string): string {
   const parts = filename.split('.');
-  const fileExtension = parts[parts.length - 1];
-
-  return fileExtension !== undefined ? allowedFileExtensions.includes(fileExtension) : false;
+  return parts[parts.length - 1];
 }
 
 export function stringifyWithRules(value: any): string {
@@ -84,4 +87,15 @@ export function getTypedParamsAs<T extends Dictionary>(
   }
 
   return properties as T;
+}
+
+// May this be a dataclass??
+export class UploadedImage {
+  public readonly fileName: string;
+  public readonly fileExtension: string;
+
+  public constructor(fileName: string) {
+    this.fileName = fileName;
+    this.fileExtension = getFileExtension(this.fileName);
+  }
 }

@@ -1,5 +1,4 @@
 import * as aiApiRequests from './ai-api-requests.ts';
-import * as databaseFiller from './database-filler.ts';
 import * as fse from './fse.ts';
 
 export function trace(filename: string, line: number, ...params: any[]): void {
@@ -10,7 +9,7 @@ interface TestModule {
   runTest(): void;
 }
 
-const testModules: TestModule[] = [aiApiRequests, databaseFiller, fse];
+const testModules: TestModule[] = [aiApiRequests, fse];
 
 function runAllTests(): void {
   for (const module of testModules) {

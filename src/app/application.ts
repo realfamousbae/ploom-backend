@@ -5,9 +5,10 @@ import type { Express, Request, Response, } from 'express';
 import type { Multer, StorageEngine } from 'multer';
 
 import { authorizeUser } from '../api/v1/authorize-user.ts';
-import { generateFromMultipleImage } from '../api/v1/generate-from-multiple.ts';
+import { generateFromMultipleImages } from '../api/v1/generate-from-multiple.ts';
 import { generateFromSingleImage } from '../api/v1/generate-from-single.ts';
 import { registerNewUser } from '../api/v1/register-new-user.ts';
+import { type Config } from '../config.ts';
 import { ApiDatabase } from '../models/database.ts';
 import { getImageStorage } from '../models/images.ts';
 import { handleMiddlewareErrors } from '../types/errors.ts';
@@ -15,6 +16,7 @@ import { apiPaths, checkPort } from '../types/types.ts';
 
 export class Application {
   private readonly app: Express;
+  private readonly config: Config;
   private readonly db: ApiDatabase;
   private readonly imageStorage: StorageEngine;
   private readonly port: number;
@@ -36,12 +38,12 @@ export class Application {
     });
   }
 
-  public constructor() {
+  public constructor(config: Config) {
     this.app = express();
-    this.db = new ApiDatabase();
+    this.config = config;
+    this.db = new ApiDatabase(this.config); 
     this.imageStorage = getImageStorage();
-    // FIXME: `process.env.PORT` should be replaced with typesafe feature.
-    this.port = checkPort(Number.parseInt(process.env.PORT!));
+    this.port = checkPort(this.config.server.port);
     this.upload = multer({ storage: this.imageStorage });
 
     this.db.checkTables();
@@ -61,7 +63,7 @@ export class Application {
       '/api/v1/generate-from-multiple', 
       this.upload.array('images', 5), 
       (request: Request, response: Response) => {
-        generateFromMultipleImage(request, response, this.db);
+        generateFromMultipleImages(request, response, this.db);
       }
     );
     this.app.post(

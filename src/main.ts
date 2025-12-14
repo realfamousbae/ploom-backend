@@ -1,11 +1,10 @@
-import { config } from 'dotenv';
-
 import { Application } from './app/application.ts';
+import { getConfig } from './config.ts';
 
 function main(): void {
-  config({ quiet: true });
+  const config = getConfig();
 
-  const server = new Application(); 
+  const server = new Application(config); 
   server.startListening();
 }
  

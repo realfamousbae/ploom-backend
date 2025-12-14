@@ -14,7 +14,6 @@ export function getImageStorage(): StorageEngine {
       _file: Express.Multer.File, 
       callback: (error: Error | null, destination: string) => void
     ) => {
-      // FIXME: Here must be done normal file naming.
       if (request.path === '/api/v1/register-new-user') {
         return callback(null, 'public/profile_images/');
       }

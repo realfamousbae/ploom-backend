@@ -16,6 +16,12 @@ export class InvalidFileExtensionError extends Error {
   }
 }
 
+export class EmptyConfigFileError extends Error {
+  public constructor(message: string) {
+    super(message);
+  }
+}
+
 /**
  * Function for handling and identifying errors and exceptions thrown by the `Multer` module.
  * 
