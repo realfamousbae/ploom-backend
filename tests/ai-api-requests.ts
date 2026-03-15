@@ -6,7 +6,7 @@ import { trace } from './testhub.ts';
 
 import { readFileSync } from 'fs';
 
-export async function runTest(): Promise<void> {
+export async function testAIApi(): Promise<void> {
   const config = getConfig();
 
   fal.config({
@@ -28,4 +28,14 @@ export async function runTest(): Promise<void> {
   trace('ai-api-requests', 28, result.data.model_mesh.content_type);
   trace('ai-api-requests', 29, result.data.model_mesh.file_data);
   trace('ai-api-requests', 30, Object.getOwnPropertyNames(result.data.model_mesh));
+}
+
+export async function runTest(id: number): Promise<void> {
+  const response = await fetch('http://localhost:5173/');
+  
+  if (!response.ok) {
+    throw new Error(`Ошибка: ${response.status}`);
+  }
+
+  console.log(response);
 }
