@@ -13,7 +13,7 @@ export interface User extends Dictionary {
   user_id?: number;
   readonly name?: string;
   readonly surname?: string;
-  readonly email: string;
+  readonly email?: string;
   readonly password?: string;
   profile_image_path?: string;
 }

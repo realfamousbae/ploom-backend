@@ -7,6 +7,7 @@ import type { Multer, StorageEngine } from 'multer';
 import { authorizeUser } from '../api/v1/authorize-user.ts';
 import { generateFromMultipleImages } from '../api/v1/generate-from-multiple.ts';
 import { generateFromSingleImage } from '../api/v1/generate-from-single.ts';
+import { getProfile } from '../api/v1/profile.ts';
 import { registerNewUser } from '../api/v1/register-new-user.ts';
 import { type Config } from '../config.ts';
 import { ApiDatabase } from '../models/database.ts';
@@ -63,6 +64,7 @@ export class Application {
       '/api/v1/generate-from-multiple', 
       this.upload.array('images', 5), 
       (request: Request, response: Response) => {
+        console.log(`[POST /api/v1/generate-from-multiple] Files count:`, request.files?.length);
         generateFromMultipleImages(request, response, this.db);
       }
     );
@@ -70,6 +72,7 @@ export class Application {
       '/api/v1/generate-from-single', 
       this.upload.single('image'), 
       (request: Request, response: Response) => {
+        console.log(`[POST /api/v1/generate-from-single] File:`, request.file?.filename);
         generateFromSingleImage(request, response, this.db);
       }
     );
@@ -78,6 +81,13 @@ export class Application {
       this.upload.single('profile_image'),
       (request: Request, response: Response) => {
         registerNewUser(request, response, this.db);
+      }
+    );
+    // Profile route (GET)
+    this.app.get(
+      '/api/v1/profile',
+      (request: Request, response: Response) => {
+        getProfile(request, response, this.db);
       }
     );
 
