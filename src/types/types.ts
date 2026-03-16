@@ -3,6 +3,8 @@ import { InvalidPortError, MissingPropertyError } from './errors.ts';
 import { join } from 'path';
 import { cwd } from 'process';
 
+const currentCwd = cwd();
+
 export const Code = {
   OK: 200,
   Created: 201,
@@ -40,7 +42,7 @@ export const apiPaths = [
  * @param filepath Path of file.
  * @returns `string` joined file path with `cwd()`.
  */
-export const joinWithCwd = (...parts: string[]) => join(cwd(), ...parts);
+export const joinWithCwd = (...parts: string[]) => join(currentCwd, ...parts);
 
 export function checkPort(value: number): number | never {
   if (value.toString().length !== 4) {
