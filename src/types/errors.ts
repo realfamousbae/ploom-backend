@@ -22,6 +22,12 @@ export class EmptyConfigFileError extends Error {
   }
 }
 
+export class MissingPropertyError extends Error {
+  public constructor(message: string) {
+    super(message);
+  }
+}
+
 /**
  * Function for handling and identifying errors and exceptions thrown by the `Multer` module.
  * 

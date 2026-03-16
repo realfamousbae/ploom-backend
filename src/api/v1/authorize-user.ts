@@ -1,32 +1,45 @@
 import type { Request, Response } from 'express';
 
 import { ApiDatabase } from '../../models/database.ts';
+import { MissingPropertyError } from '../../types/errors.ts';
 import { Code, getTypedParamsAs } from '../../types/types.ts';
 
 import type { User } from '../../models/database.ts';
 
 export function authorizeUser(request: Request, response: Response, db: ApiDatabase): any {
-  response.status(Code.BadRequest);
-  const userData = getTypedParamsAs<User>(request.query, 'email', 'password');
+  console.log(`[POST /api/v1/authorize-user] Query params:`, request.query);
 
-  if (db.isUserExists(userData, 'OR')) {
-    const dbOption = db.selectUser(userData, 'OR');
+  try {
+    const userData = getTypedParamsAs<User>(request.query, 'email', 'password');
 
-    const dataIsCorrect = 
-      dbOption.email === userData.email 
-      && 
-      dbOption.password === userData.password;
-    
-    if (dataIsCorrect) {
-      response.status(Code.OK)
-        .json({ message: 'User successfully authorized. All data is correct.' });
-    } else {
-      response.json({ message: 'Authorization failed. Email or password is incorrect.' });
+    if (db.isUserExists({ email: userData.email })) {
+      const dbOption = db.selectUser({ email: userData.email });
+
+      const dataIsCorrect =
+        dbOption.email === userData.email
+        &&
+        dbOption.password === userData.password;
+
+      if (dataIsCorrect) {
+        // Exclude password from returned user data
+        const { password, ...userWithoutPassword } = dbOption;
+        return response.status(Code.OK).json({
+          message: 'User successfully authorized. All data is correct.',
+          token: dbOption.user_id,
+          user: userWithoutPassword
+        });
+      } else {
+        return response.status(Code.Unauthorized).json({ message: 'Authorization failed. Email or password is incorrect.' });
+      }
     }
 
-    return;
-  }
+    return response.status(Code.NotFound).json({ message: 'User with provided email does not exist.' });
+  } catch (error) {
+    if (error instanceof MissingPropertyError) {
+      return response.status(Code.BadRequest).json({ message: error.message });
+    }
 
-  // This may be joined with previous message.
-  response.json({ message: 'User with provided data is not exists.' }); 
+    console.error(`[POST /api/v1/authorize-user] Internal error:`, error);
+    return response.status(Code.InternalServerError).json({ message: 'Internal server error.' });
+  }
 }

@@ -1,11 +1,17 @@
-import { InvalidPortError } from './errors.ts';
+import { InvalidPortError, MissingPropertyError } from './errors.ts';
 
 import { join } from 'path';
 import { cwd } from 'process';
 
 export const Code = {
   OK: 200,
-  BadRequest: 500
+  Created: 201,
+  BadRequest: 400,
+  Unauthorized: 401,
+  Forbidden: 403,
+  NotFound: 404,
+  Conflict: 409,
+  InternalServerError: 500
 } as const;
 
 export type ResponseCode = typeof Code[keyof typeof Code];
@@ -25,7 +31,8 @@ export const apiPaths = [
   '/api/v1/authorize-user',
   '/api/v1/generate-from-single', 
   '/api/v1/generate-from-multiple',
-  '/api/v1/register-new-user'
+  '/api/v1/register-new-user',
+  '/api/v1/profile'
 ];
 
 /**
@@ -80,10 +87,11 @@ export function getTypedParamsAs<T extends Dictionary>(
   for (const propertyName of propertyNames) {
     const property = object[propertyName];
 
-    if (property) {
-      properties[propertyName] = property;
+    if (property === undefined) {
+      throw new MissingPropertyError(`Required property '${propertyName}' is missing.`);
     }
-    // FIXME: If `unedfined` - must be thrown error or something else...
+
+    properties[propertyName] = property;
   }
 
   return properties as T;
