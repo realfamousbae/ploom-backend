@@ -18,9 +18,6 @@ export function registerNewUser(request: Request, response: Response, db: ApiDat
       'password'
     );
 
-    // FIXME: And what will be if file is not exists?
-    // May be later new api path will be provided for
-    // uploading only profile photo.
     if (request.file) {
       user.profile_image_path = joinWithCwd('/public/profile_images', request.file.filename);
     }

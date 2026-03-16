@@ -114,7 +114,7 @@ export class ApiDatabase {
     return this.selectRow<User>(user, 'users', operator);
   }
 
-  public insertUser(user: Omit<User, 'user_id' | 'profile_image_path'>): void {
+  public insertUser(user: Omit<User, 'user_id'>): void {
     this.insertRow<User>(user, 'users');
   }
 
