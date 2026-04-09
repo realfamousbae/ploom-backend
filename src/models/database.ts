@@ -22,7 +22,7 @@ interface Generation extends Dictionary {
   readonly operation_id?: number;
   readonly user_id: number;
   readonly uploaded_images_paths: string[];
-  readonly generated_image_path?: never; // FIXME: REMOVE WITH ACTUAL TYPE LATER.
+  readonly generated_image_path?: string;
 }
 
 export class ApiDatabase {
@@ -119,7 +119,7 @@ export class ApiDatabase {
   }
 
   public insertGeneration(
-    generation: Omit<Generation, 'operation_id' | 'generated_image_path'>
+    generation: Omit<Generation, 'operation_id'>
   ): void {
     this.insertRow<Generation>(generation, 'generations');
   }

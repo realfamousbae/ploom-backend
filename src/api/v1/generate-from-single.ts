@@ -2,17 +2,20 @@ import type { Request, Response } from 'express';
 
 import { ApiDatabase } from '../../models/database.ts';
 import { Code, joinWithCwd, maxUploadingFileSize } from '../../types/types.ts';
+import { getConfig } from '../../config.ts';
+import { requestAIGeneration } from '../ai.ts';
 
-export function generateFromSingleImage(
+import { readFileSync } from 'fs';
+
+export async function generateFromSingleImage(
   request: Request, 
   response: Response, 
   db: ApiDatabase
-): any {
+): Promise<any> {
   response.status(Code.BadRequest);
 
   const userIdParam = request.query['user_id'] as string;
 
-  // FIXME: REMOVE INTO IMAGES STORAGE GENERATOR.
   if (!userIdParam) {
     return response.json({
       message: 'To generate an image, you must pass a unique user ID as the user-id request parameter.'
@@ -25,19 +28,38 @@ export function generateFromSingleImage(
     return response.json({ message: 'The size of the uploaded file must not exceed 50 megabytes.' });
   }
 
-  try {
-    // Generation here.
+  const userId = Number.parseInt(userIdParam);
+  if (Number.isNaN(userId)) {
+    return response.json({ message: 'user_id parameter must be a numeric value.' });
+  }
 
-    const userId = Number.parseInt(userIdParam);
+  try {
+    const config = getConfig();
+    const imageData = readFileSync(request.file.path);
+
+    const generatedImageUrl = await requestAIGeneration(
+      config,
+      imageData,
+      request.file.originalname,
+      request.file.mimetype
+    );
     
     db.insertGeneration({ 
       user_id: userId, 
-      uploaded_images_paths: [joinWithCwd(request.file.path)] 
+      uploaded_images_paths: [joinWithCwd(request.file.path)],
+      generated_image_path: generatedImageUrl
     });
 
     response.status(Code.OK)
-      .json({ message: 'Image uploaded successfully.' });
-  } catch {
-    return response.json({ message: 'user_id parameter must be a numeric value.' });
+      .json({
+        message: 'Image generated successfully.',
+        generated_image_url: generatedImageUrl
+      });
+  } catch (error: any) {
+    console.error('AI Generation Error:', error);
+    response.status(Code.InternalServerError).json({
+      message: 'An error occurred during image generation.',
+      error: error.message
+    });
   }
 }
