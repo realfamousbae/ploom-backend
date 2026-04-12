@@ -1,4 +1,4 @@
-# **form-ai-backend-api** - the server part of the FormAI project.
+# **ploom-backend** - the server part of the Ploom-backend project.
 
 ### [README in russian language](./README_RU.md)
 

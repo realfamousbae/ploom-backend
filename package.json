@@ -1,23 +1,22 @@
 {
-  "name": "form-ai-backend-api",
-  "version": "0.1.2-alpha",
-  "description": "The server part of the FormAI project.",
+  "name": "ploom-backend",
+  "version": "0.2.0",
+  "description": "The server part of the Ploom project.",
   "keywords": [
-    "form-ai-backend-api",
-    "form-ai",
+    "ploom-backend",
     "typescript",
     "ts"
   ],
-  "homepage": "https://github.com/koenigjesko/form-ai-backend-api#readme",
+  "homepage": "https://github.com/koenigjesko/ploom-backend#readme",
   "bugs": {
-    "url": "https://github.com/koenigjesko/form-ai-backend-api/issues"
+    "url": "https://github.com/koenigjesko/ploom-backend/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koenigjesko/form-ai-backend-api.git"
+    "url": "git+https://github.com/koenigjesko/ploom-backend.git"
   },
   "license": "Apache-2.0",
-  "author": "KoenigJesko",
+  "author": "realfamousbae",
   "type": "module",
   "main": "src/main.ts",
   "scripts": {

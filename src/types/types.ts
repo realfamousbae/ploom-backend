@@ -99,7 +99,6 @@ export function getTypedParamsAs<T extends Dictionary>(
   return properties as T;
 }
 
-// May this be a dataclass??
 export class UploadedImage {
   public readonly fileName: string;
   public readonly fileExtension: string;

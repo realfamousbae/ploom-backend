@@ -7,8 +7,6 @@ import { Code, getTypedParamsAs, joinWithCwd } from '../../types/types.ts';
 import type { User } from '../../models/database.ts';
 
 export function registerNewUser(request: Request, response: Response, db: ApiDatabase): any {
-  console.log(`[POST /api/v1/register-new-user] Query params:`, request.query, `File:`, request.file?.filename);
-  
   try {
     let user = getTypedParamsAs<User>(
       request.query,
@@ -43,7 +41,6 @@ export function registerNewUser(request: Request, response: Response, db: ApiDat
       return response.status(Code.BadRequest).json({ message: error.message });
     }
 
-    console.error(`[POST /api/v1/register-new-user] Internal error:`, error);
     return response.status(Code.InternalServerError).json({ message: 'Internal server error.' });
   }
 }

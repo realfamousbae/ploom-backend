@@ -1,4 +1,4 @@
-# **form-ai-backend-api** — серверная часть проекта FormAI
+# **ploom-backend** — серверная часть проекта Ploom-backend
 
 ### [Список изменений с последнего обновления](./CHANGELOG.md)
 

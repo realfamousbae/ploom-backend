@@ -1,13 +1,15 @@
 import type { Request, Response } from 'express';
 
 import { ApiDatabase } from '../../models/database.ts';
-import { MissingPropertyError } from '../../types/errors.ts';
+import { isLoggingEnabled, MissingPropertyError } from '../../types/errors.ts';
 import { Code, getTypedParamsAs } from '../../types/types.ts';
 
 import type { User } from '../../models/database.ts';
 
 export function authorizeUser(request: Request, response: Response, db: ApiDatabase): any {
-  console.log(`[POST /api/v1/authorize-user] Query params:`, request.query);
+  if (isLoggingEnabled()) {
+    console.log(`[POST /api/v1/authorize-user] Request body:`, request.body);
+  }
 
   try {
     const userData = getTypedParamsAs<User>(request.query, 'email', 'password');

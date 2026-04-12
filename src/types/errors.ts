@@ -4,6 +4,8 @@ import type { NextFunction, Request, Response, } from 'express';
 
 import { Code } from './types.ts';
 
+import { argv } from 'process';
+
 export class InvalidPortError extends Error {
   public constructor(message: string) {
     super(message);
@@ -26,6 +28,31 @@ export class MissingPropertyError extends Error {
   public constructor(message: string) {
     super(message);
   }
+}
+
+/**
+ * Checks if logging is enabled by looking for the `-l` flag in the command-line arguments.
+ * This allows developers to easily enable or disable logging without changing the code.
+ * @returns `true` if logging is enabled, `false` otherwise.
+ */
+export function isLoggingEnabled(): boolean {
+  return "-l" in argv;
+}
+
+/**
+ * Logs each incoming request (method + path + client IP).
+ * This helps to visibly trace incoming traffic during development.
+ * 
+ * @param request - The incoming request to log.
+ * @param _response - The response object, not used in this middleware but required by the signature.
+ * @param next - Function to continue to the next middleware or route handler.
+ */
+export function logIncomingRequest(request: Request, _response: Response, next: NextFunction): void {
+  console.log(
+    `[${new Date().toISOString()}] ${request.method} ${request.originalUrl} from ${request.ip}`
+  );
+
+  next();
 }
 
 /**

@@ -54,6 +54,7 @@ export class ApiDatabase {
     operator: Operator
   ): T {
     let equalities = this.makeQueryEqualities(data);
+    
     const result = this.driver.prepare(
       `SELECT * FROM ${table} WHERE ${equalities.join(` ${operator} `)}`
     );
@@ -106,7 +107,7 @@ export class ApiDatabase {
   }
 
   public checkTables(): void {
-    const initdriverQuery = readFileSync(this.config.database.shema, 'utf-8'); 
+    const initdriverQuery = readFileSync(this.config.database.schema, 'utf-8'); 
     this.driver.exec(initdriverQuery);
   }
 

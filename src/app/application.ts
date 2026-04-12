@@ -12,7 +12,7 @@ import { registerNewUser } from '../api/v1/register-new-user.ts';
 import { type Config } from '../config.ts';
 import { ApiDatabase } from '../models/database.ts';
 import { getImageStorage } from '../models/images.ts';
-import { handleMiddlewareErrors } from '../types/errors.ts';
+import { handleMiddlewareErrors, isLoggingEnabled, logIncomingRequest } from '../types/errors.ts';
 import { apiPaths, checkPort } from '../types/types.ts';
 
 export class Application {
@@ -41,6 +41,7 @@ export class Application {
 
   public constructor(config: Config) {
     this.app = express();
+
     this.config = config;
     this.db = new ApiDatabase(this.config); 
     this.imageStorage = getImageStorage();
@@ -48,6 +49,15 @@ export class Application {
     this.upload = multer({ storage: this.imageStorage });
 
     this.db.checkTables();
+
+    // Log each incoming request (method + path + client IP).
+    // This helps to visibly trace incoming traffic during development.
+    if (isLoggingEnabled()) {
+      this.app.use(logIncomingRequest);
+    }
+
+    // Middleware for handling errors thrown by `Multer` during file uploading.
+    this.app.use(handleMiddlewareErrors);
   }
 
   public startListening(): void {
@@ -91,7 +101,6 @@ export class Application {
       }
     );
 
-    this.app.use(handleMiddlewareErrors);
     this.app.listen(this.port, () => console.log(`Server started on ${this.getServerUri()}.`));
   }
 }

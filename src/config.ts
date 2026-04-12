@@ -13,7 +13,7 @@ interface Server {
 
 interface Database {
   readonly file: string;
-  readonly shema: string;
+  readonly schema: string;
 }
 
 interface API {
