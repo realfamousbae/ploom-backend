@@ -1,18 +1,22 @@
-# Tasks set during development:
+# Project Tasks
 
-#### Done:
-- [x] Make uploading file limit.
-- [x] Conduct full unit testing (optional) (The decision was made to abandon it, taking into account the sustainability of the project's tools).
-- [x] It is necessary to consider the possibility of creating a database connection pool for multi-threaded work with the database. (During the analysis of possible options, it was decided to abandon this idea in favor of procedural connections.)
-- [x] May be `nodemon` js-package will be installed for faster debug. (Due to the complexity of working with the API in general, it was decided not to add this tool).
-- [x] Connect and configure a relational database (already in progress).
+#### ✅ Done:
+- [x] Integrate AI (fal-ai/trellis) for 3D generation from single/multiple images.
+- [x] Implement user authorization and registration.
+- [x] Create user profile endpoint and Bearer token support.
+- [x] Connect and configure SQLite relational database.
+- [x] Implement file upload limits and validation (Multer).
+- [x] Organize project directory structure.
+- [x] Comprehensive technical documentation (README/CHANGELOG).
+- [x] Set up configuration system via `config.toml`.
 
-#### Tasks in progress
-- [ ] Change Multer initialization parameters!!!
-- [ ] Implement correct storage and naming of files.
-- [ ] Implement authorization, as well as lay the foundation for storing logins and passwords, and possibly enable data storage in cookies.
-- [ ] Based on the previous point, implement new request paths for user authorization and registration.
+#### 🚀 In Progress:
+- [ ] Implement local cache management for generated models.
+- [ ] Refine error handling for AI generation timeouts.
+- [ ] Conduct final unit testing for API endpoints.
 
-#### Goals for the future:
-- [ ] Consider and implement storage of user authorization data in a secure (encrypted?) form.
-- [ ] Integrate a neural network to generate the final product.
+#### 🎯 Future Goals:
+- [ ] Deployment to Amwera.ru.
+- [ ] Secure encryption for user passwords.
+- [ ] Dedicated API path for profile photo updates.
+- [ ] Advanced file storage (S3 or similar).
