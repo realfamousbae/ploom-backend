@@ -1,44 +1,178 @@
-# **ploom-backend** - the server part of the Ploom-backend project.
+# **ploom-backend**
 
-### [README in russian language](./README_RU.md)
+The server-side component of the Ploom project, providing a robust API for user management and AI-powered 3D model generation from images.
 
-### [CHANGELOG since last update](./CHANGELOG.md)
+### [README на русском языке](./README_RU.md) | [CHANGELOG](./CHANGELOG.md) | [TODO](./TODO.md)
 
-### [Checklist of set and completed project tasks.](./TODO.md)
+---
 
-## Implemented API functionality
-Currently, saving of images transmitted with a POST-request to a `./public/images/` for storing public images and deploying a sqlite database has been implemented. POST-requests accepts only `.jpg`, `.jpeg`, or `.png` extension.
+## 🚀 Overview
 
-|  Path   | Method | Any type of request data | Returns
-|:-------:|:------:|:----------------------------------------------------------------------------:|:----:|
-| `/` | **GET** | None. | `200 OK` code + `json`-dictionary about using the **POST** method in the correct way. |
-| `/api/v1/authorize-user` | **POST** | In the `params` block, the `email` key and `password` of the authorized user must be string values. | `200 OK` code + `json`-dictionary with a message indicating successful completion if the transferred user data is correct. / `500 Bad Request` if transmitted data is incorrect or the user with such data does not exist in the database. |
-| `/api/v1/generate-from-single` | **POST** | In the `params block`, the `user_id` key **must be a numeric value** - the unique user ID. In the `body` block, the `image` key's value **must be a file**.| `200 OK` code if image provided and everything is ok. / `500 Bad Request` if something went wrong. |
-| `/api/v1/generate-from-multiple` | **POST** | In the `params block`, the `user_id` key **must be a numeric value** - the unique user ID. In the `body` block, the `images` key must be an array containing **1-5 files**.  | `200 OK` code image provided and everything is ok. / `500 Bad Request` if something went wrong. |
-| `/api/v1/register-new-user` | **POST** | In the `params` block, the keys `name`, `surname`, `email` and `password` must be string values. Optionally, in the `body` block, the value of the `profile_image` key **must be a file**. | `200 OK` code + `json`-dictionary with a message indicating successful completion if the transferred user data is correct. / `500 Bad Request` if a user with this data already exists. |
+**ploom-backend** is a Node.js application built with TypeScript that integrates advanced AI models to transform 2D images into 3D assets. It handles user authentication, profile management, and provides a seamless interface for the [fal.ai](https://fal.ai) Trellis model.
 
-In all cases, the response to the request will be a `JSON` dictionary that will **ALWAYS, WITHOUT EXCEPTION**, contain a `"message"` key (`{ "message": "..." }`) describing the request result. Even if something goes wrong and an unexpected exception occurs, the sender will be able to view the server message.
+### Key Features
+- **AI 3D Generation**: Generate high-quality 3D models from single or multiple images.
+- **User Management**: Secure registration and authorization.
+- **Image Processing**: Handles profile pictures and multi-image uploads using Multer.
+- **Persistent Storage**: Uses SQLite for fast and reliable data management.
+- **TypeScript First**: Fully typed codebase for better maintainability and developer experience.
 
-## Build and running
-First of all make sure you have the [latest version of Node.js](https://nodejs.org/en) installed on your PC. If everything is like this, use the command in the root of project to install all dependencies:
-```bat
-npm i 
+---
+
+## 🛠 Tech Stack
+
+- **Runtime**: [Node.js](https://nodejs.org/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Framework**: [Express.js](https://expressjs.com/)
+- **Database**: [SQLite](https://sqlite.org/) (via `better-sqlite3`)
+- **AI Integration**: [fal.ai](https://fal.ai) (Trellis model)
+- **File Handling**: [Multer](https://github.com/expressjs/multer)
+
+---
+
+## 📂 Project Structure
+
+```text
+├── db/                   # Database schema and SQLite files
+├── public/               # Static assets and uploaded images
+│   ├── profile_images/   # User profile pictures
+│   ├── uploaded_images/  # Images used for 3D generation
+│   └── generated_images/ # Local cache for generated results
+├── src/                  # Source code
+│   ├── api/              # API Route handlers
+│   │   └── v1/           # Versioned API endpoints
+│   ├── app/              # Core application logic
+│   ├── models/           # Database and storage abstractions
+│   ├── types/            # TypeScript interfaces and custom errors
+│   ├── config.ts         # Configuration loader
+│   └── main.ts           # Entry point
+├── tests/                # Test suites
+└── config.toml           # (Generated) Application configuration
 ```
 
-### The way to run directly is with TypeScript and `ts-node`:
-```bat 
-npm start
+---
+
+## ⚙️ Configuration
+
+The project uses a `config.toml` file for environment-specific settings. If it doesn't exist, it will be created automatically on the first run.
+
+### `config.toml` Structure:
+```toml
+[server]
+hostname = "localhost"
+port = 3000
+
+[database]
+file = "db/main.sqlite"
+schema = "db/schema.sql"
+
+[api]
+key = "your-fal-ai-api-key" # Obtain from https://fal.ai
 ```
 
-### To transpile source code to JavaScript and run it through Node.js:
-```bat
-npm run js
-```
+---
 
-### To just transpile the source code to JavaScript, use:
-```bash
-npx tsc
-```
-Output files will be located in `./dist` folder.
+## 📡 API Documentation
 
-###### Detailed documentation and code comments will be compiled later.
+### Endpoint Summary
+
+| Path | Method | Description |
+|:-----|:------:|:------------|
+| `/` | `GET` | API Information & Health Check |
+| `/api/v1/authorize-user` | `POST` | Authenticate user |
+| `/api/v1/register-new-user` | `POST` | Create a new account |
+| `/api/v1/profile` | `GET` | Retrieve user profile data |
+| `/api/v1/generate-from-single` | `POST` | Generate 3D from one image |
+| `/api/v1/generate-from-multiple` | `POST` | Generate 3D from 1-5 images |
+
+---
+
+### Detailed Specifications
+
+#### 1. **User Authorization**
+`POST /api/v1/authorize-user`
+- **Query Parameters**:
+  - `email` (string): User's email.
+  - `password` (string): User's password.
+- **Success Response**: `200 OK`
+  ```json
+  {
+    "message": "User successfully authorized. All data is correct.",
+    "token": "...",
+    "user": { "name": "...", "surname": "...", "email": "..." }
+  }
+  ```
+
+#### 2. **User Registration**
+`POST /api/v1/register-new-user`
+- **Query Parameters**: `name`, `surname`, `email`, `password`.
+- **Form Data (Body)**:
+  - `profile_image` (file, optional): User's avatar.
+- **Success Response**: `200 OK`
+  ```json
+  { "message": "User successfully registered.", "token": "..." }
+  ```
+
+#### 3. **User Profile**
+`GET /api/v1/profile`
+- **Headers**:
+  - `Authorization`: `Bearer <token>`
+- **Success Response**: `200 OK`
+  ```json
+  { "name": "...", "surname": "...", "email": "...", "profile_image_path": "..." }
+  ```
+
+#### 4. **AI Generation (Single Image)**
+`POST /api/v1/generate-from-single`
+- **Query Parameters**:
+  - `user_id` (number): Unique user ID.
+- **Form Data (Body)**:
+  - `image` (file): Source image for generation.
+- **Success Response**: `200 OK`
+  ```json
+  {
+    "message": "Image generated successfully.",
+    "generated_image_url": "https://..."
+  }
+  ```
+
+#### 5. **AI Generation (Multiple Images)**
+`POST /api/v1/generate-from-multiple`
+- **Query Parameters**:
+  - `user_id` (number): Unique user ID.
+- **Form Data (Body)**:
+  - `images` (files[]): Array of 1-5 images.
+- **Success Response**: `200 OK`
+  ```json
+  {
+    "message": "3D Model generated successfully.",
+    "generated_image_url": "https://..."
+  }
+  ```
+
+---
+
+## 🛠 Installation & Running
+
+1. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Setup Config**:
+   Rename or edit the generated `config.toml` and add your `fal.ai` API key.
+
+3. **Run (Development)**:
+   ```bash
+   npm start
+   ```
+
+4. **Build & Run (Production)**:
+   ```bash
+   npm run js
+   ```
+
+---
+
+## 📄 License
+This project is licensed under the Apache-2.0 License - see the [LICENSE.txt](LICENSE.txt) file for details.
