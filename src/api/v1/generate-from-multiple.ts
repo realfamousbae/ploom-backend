@@ -24,7 +24,7 @@ export async function generateFromMultipleImages(
   }
   if (!request.files || files.length === 0) {
     return response.status(Code.BadRequest)
-      .json({ message: 'No files uploaded' });
+      .json({ message: 'No files uploaded.' });
   }
 
   const userId = Number.parseInt(userIdParam);

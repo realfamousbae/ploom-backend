@@ -45,7 +45,8 @@ export const apiPaths = [
 export const joinWithCwd = (...parts: string[]) => join(currentCwd, ...parts);
 
 export function checkPort(value: number): number | never {
-  if (value.toString().length !== 4) {
+  // Test Amwera feature: 80 is a valid port value, but it has only 2 digits.
+  if (value.toString().length !== 4 && value !== 80) { 
     throw new InvalidPortError('Server port value must be in range between 1000 and 9999.');
   }
 

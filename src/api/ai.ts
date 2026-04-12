@@ -11,7 +11,7 @@ export async function requestAIGeneration(
     credentials: config.api.key
   });
 
-  const file = new File([imageData], fileName, { type: mimeType });
+  const file = new File([new Uint8Array(imageData)], fileName, { type: mimeType });
   const url = await fal.storage.upload(file);
 
   const result: any = await fal.subscribe('fal-ai/trellis', {
@@ -38,7 +38,7 @@ export async function requestMultiImageAIGeneration(
   });
 
   const uploadPromises = images.map(image => {
-    const file = new File([image.data], image.name, { type: image.mimeType });
+    const file = new File([new Uint8Array(image.data)], image.name, { type: image.mimeType });
     return fal.storage.upload(file);
   });
 

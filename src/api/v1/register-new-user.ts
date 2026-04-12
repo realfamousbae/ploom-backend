@@ -35,7 +35,6 @@ export function registerNewUser(request: Request, response: Response, db: ApiDat
         message: 'User successfully registered.',
         token: dbOption.user_id
       });
-
   } catch (error) {
     if (error instanceof MissingPropertyError) {
       return response.status(Code.BadRequest).json({ message: error.message });

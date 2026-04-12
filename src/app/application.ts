@@ -74,7 +74,6 @@ export class Application {
       '/api/v1/generate-from-multiple', 
       this.upload.array('images', 5), 
       (request: Request, response: Response) => {
-        console.log(`[POST /api/v1/generate-from-multiple] Files count:`, request.files?.length);
         generateFromMultipleImages(request, response, this.db);
       }
     );
@@ -82,7 +81,6 @@ export class Application {
       '/api/v1/generate-from-single', 
       this.upload.single('image'), 
       (request: Request, response: Response) => {
-        console.log(`[POST /api/v1/generate-from-single] File:`, request.file?.filename);
         generateFromSingleImage(request, response, this.db);
       }
     );
