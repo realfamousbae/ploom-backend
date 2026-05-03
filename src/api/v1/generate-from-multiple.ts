@@ -1,11 +1,12 @@
 import type { Request, Response } from 'express';
 
 import { ApiDatabase } from '../../models/database.ts';
-import { Code, joinWithCwd, maxUploadingFileSize } from '../../types/types.ts';
+import { Code, maxUploadingFileSize } from '../../types/types.ts';
 import { getConfig } from '../../config.ts';
 import { requestMultiImageAIGeneration } from '../ai.ts';
 
 import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 export async function generateFromMultipleImages(
   request: Request, 
@@ -52,7 +53,7 @@ export async function generateFromMultipleImages(
       imagesInput
     );
     
-    const filesPaths = files.map(file => joinWithCwd(file.path));
+    const filesPaths = files.map(file => resolve(file.path));
     
     db.insertGeneration({ 
       user_id: userId, 

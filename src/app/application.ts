@@ -4,6 +4,9 @@ import multer from 'multer';
 import type { Express, Request, Response, } from 'express';
 import type { Multer, StorageEngine } from 'multer';
 
+import { mkdirSync } from 'fs';
+import { dirname } from 'path';
+
 import { authorizeUser } from '../api/v1/authorize-user.ts';
 import { generateFromMultipleImages } from '../api/v1/generate-from-multiple.ts';
 import { generateFromSingleImage } from '../api/v1/generate-from-single.ts';
@@ -23,17 +26,21 @@ export class Application {
   private readonly port: number;
   private readonly upload: Multer;
 
-  /**
-   * @deprecated
-   * 
-   * Made only for debug builds when api is runnig at localhost.
-   */
-  private getServerUri(): string {
-    return `http://localhost:${this.port}/`;
+  private static ensureRuntimeDirectories(config: Config): void {
+    const directories = [
+      dirname(config.database.file),
+      config.paths.profileImages,
+      config.paths.uploadedImages,
+      config.paths.generatedImages,
+    ];
+
+    for (const dir of directories) {
+      mkdirSync(dir, { recursive: true });
+    }
   }
 
   private handleRoot(_request: Request, response: Response): void {
-    response.json({ 
+    response.json({
       message: 'Use POST-method on next api paths.',
       paths: apiPaths
     });
@@ -43,8 +50,10 @@ export class Application {
     this.app = express();
 
     this.config = config;
-    this.db = new ApiDatabase(this.config); 
-    this.imageStorage = getImageStorage();
+    Application.ensureRuntimeDirectories(this.config);
+
+    this.db = new ApiDatabase(this.config);
+    this.imageStorage = getImageStorage(this.config);
     this.port = checkPort(this.config.server.port);
     this.upload = multer({ storage: this.imageStorage });
 
@@ -71,15 +80,15 @@ export class Application {
       }
     );
     this.app.post(
-      '/api/v1/generate-from-multiple', 
-      this.upload.array('images', 5), 
+      '/api/v1/generate-from-multiple',
+      this.upload.array('images', 5),
       (request: Request, response: Response) => {
         generateFromMultipleImages(request, response, this.db);
       }
     );
     this.app.post(
-      '/api/v1/generate-from-single', 
-      this.upload.single('image'), 
+      '/api/v1/generate-from-single',
+      this.upload.single('image'),
       (request: Request, response: Response) => {
         generateFromSingleImage(request, response, this.db);
       }
@@ -99,6 +108,9 @@ export class Application {
       }
     );
 
-    this.app.listen(this.port, () => console.log(`Server started on ${this.getServerUri()}.`));
+    const hostname = this.config.server.hostname;
+    this.app.listen(this.port, hostname, () => {
+      console.log(`Server started on http://${hostname}:${this.port}/.`);
+    });
   }
 }
