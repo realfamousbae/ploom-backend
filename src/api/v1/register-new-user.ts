@@ -1,8 +1,10 @@
 import type { Request, Response } from 'express';
 
+import { resolve } from 'path';
+
 import { ApiDatabase } from '../../models/database.ts';
 import { MissingPropertyError } from '../../types/errors.ts';
-import { Code, getTypedParamsAs, joinWithCwd } from '../../types/types.ts';
+import { Code, getTypedParamsAs } from '../../types/types.ts';
 
 import type { User } from '../../models/database.ts';
 
@@ -20,7 +22,7 @@ export function registerNewUser(request: Request, response: Response, db: ApiDat
     // May be later new api path will be provided for
     // uploading only profile photo.
     if (request.file) {
-      user.profile_image_path = joinWithCwd('/public/profile_images', request.file.filename);
+      user.profile_image_path = resolve(request.file.path);
     }
 
     if (db.isUserExists({ email: user.email })) {

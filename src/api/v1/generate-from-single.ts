@@ -1,11 +1,12 @@
 import type { Request, Response } from 'express';
 
 import { ApiDatabase } from '../../models/database.ts';
-import { Code, joinWithCwd, maxUploadingFileSize } from '../../types/types.ts';
+import { Code, maxUploadingFileSize } from '../../types/types.ts';
 import { getConfig } from '../../config.ts';
 import { requestAIGeneration } from '../ai.ts';
 
 import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 export async function generateFromSingleImage(
   request: Request, 
@@ -46,7 +47,7 @@ export async function generateFromSingleImage(
     
     db.insertGeneration({ 
       user_id: userId, 
-      uploaded_images_paths: [joinWithCwd(request.file.path)],
+      uploaded_images_paths: [resolve(request.file.path)],
       generated_image_path: generatedImageUrl
     });
 

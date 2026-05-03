@@ -21,6 +21,8 @@
   "main": "src/main.ts",
   "scripts": {
     "start": "npx ts-node src/main.ts",
+    "build": "npx tsc",
+    "serve": "node dist/main.js",
     "js": "npx tsc && node dist/main.js",
     "test": "npx ts-node tests/testhub.ts"
   },
