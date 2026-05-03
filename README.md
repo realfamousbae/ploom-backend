@@ -54,9 +54,22 @@ The server-side component of the Ploom project, providing a robust API for user 
 
 ## ⚙️ Configuration
 
-The project uses a `config.toml` file for environment-specific settings. If it doesn't exist, it will be created automatically on the first run.
+The project supports two configuration sources, with environment variables taking precedence over the TOML file. This makes it equally suitable for local development and managed deployments (e.g. Render).
 
-### `config.toml` Structure:
+### Environment Variables
+
+| Variable | Description | Default |
+|:---------|:------------|:--------|
+| `HOST` | Hostname to bind the HTTP server to. | `0.0.0.0` |
+| `PORT` | Port to listen on (1–65535). Injected automatically by Render. | `3000` |
+| `DATA_DIR` | Root directory for writable data (database + uploaded/generated images). Use the mount path of a persistent disk in production. | `./` |
+| `DB_FILE` | SQLite database file path. Resolved under `DATA_DIR` when relative. | `db/main.sqlite` |
+| `FAL_API_KEY` | API key for [fal.ai](https://fal.ai). **Required.** | — |
+
+When `FAL_API_KEY` is set, the server starts without `config.toml`. Otherwise, on first launch a template `config.toml` is generated and the process exits so you can fill it in.
+
+### `config.toml` (local development fallback)
+
 ```toml
 [server]
 hostname = "localhost"
@@ -69,6 +82,8 @@ schema = "db/schema.sql"
 [api]
 key = "your-fal-ai-api-key" # Obtain from https://fal.ai
 ```
+
+On startup the application creates the runtime directories (`DATA_DIR/public/profile_images`, `uploaded_images`, `generated_images`, and the directory of the SQLite file) automatically.
 
 ---
 
@@ -158,19 +173,36 @@ key = "your-fal-ai-api-key" # Obtain from https://fal.ai
    ```bash
    npm install
    ```
+   A committed `package-lock.json` is provided for reproducible installs.
 
 2. **Setup Config**:
-   Rename or edit the generated `config.toml` and add your `fal.ai` API key.
+   Either set the environment variables listed above (at minimum `FAL_API_KEY`), or edit the generated `config.toml`.
 
 3. **Run (Development)**:
    ```bash
-   npm start
+   npm start          # ts-node, no build step
    ```
 
 4. **Build & Run (Production)**:
    ```bash
+   npm run build      # tsc -> dist/
+   npm run serve      # node dist/main.js
+   # or as a single command:
    npm run js
    ```
+
+---
+
+## ☁️ Deployment (Render)
+
+The backend is ready to deploy to [Render](https://render.com) as a Web Service.
+
+- **Build Command**: `npm install && npm run build`
+- **Start Command**: `npm run serve`
+- **Environment Variables**: set `FAL_API_KEY`. Optionally override `HOST`, `DB_FILE`, etc. `PORT` is injected by Render automatically.
+- **Persistent Disk**: attach a disk and set `DATA_DIR` to its mount path (e.g. `/var/data`). The SQLite database and uploaded/generated images will live there and survive redeploys.
+
+The server binds to `0.0.0.0` by default and accepts the full 1–65535 port range, so no extra configuration is required for Render's networking.
 
 ---
 
