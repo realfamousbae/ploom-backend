@@ -9,7 +9,7 @@
 - **Reproducible Installs**: Committed `package-lock.json` and removed it from `.gitignore`.
 - **Code Quality**: Typo fixes and small cleanup across API handlers, application bootstrap and shared types.
 
-### **`v.0.3.0` from 21.05.2026** (Latest release)
+### **`v.0.3.0` from 12.04.2026** (Latest release)
 - **AI 3D Generation**: Integrated `fal-ai/trellis` model for high-quality 3D asset generation from single and multiple images.
 - **Enhanced Documentation**: Completely rewritten README with detailed API specifications, project structure, and configuration guides.
 - **Profile Management**: Added `/api/v1/profile` endpoint to retrieve user data.
