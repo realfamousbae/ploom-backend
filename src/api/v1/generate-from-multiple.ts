@@ -1,3 +1,20 @@
+/**
+ * @module src/api/v1/generate-from-multiple
+ * 
+ * @description This module defines the `generateFromMultipleImages` function, which is responsible for handling
+ * image generation requests based on multiple uploaded images. It validates the input, processes the images,
+ * and interacts with the AI generation service to produce a new image. The generated image URL is then stored 
+ * in the database along with the paths of the uploaded images.
+ * 
+ * The function expects a user ID as a query parameter and an array of uploaded files in the request. It checks
+ * for the presence of these parameters, validates the file sizes, and then calls the AI generation service. 
+ * If the generation is successful, it responds with the generated image URL; otherwise, it returns an 
+ * appropriate error message.
+ * 
+ * The function also includes error handling to catch any issues that may arise during the generation process, 
+ * such as problems with the AI service or file processing.
+ */
+
 import type { Request, Response } from 'express';
 
 import { ApiDatabase } from '../../models/database.ts';
@@ -8,6 +25,21 @@ import { requestMultiImageAIGeneration } from '../ai.ts';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
+/**
+ * Generates an image based on multiple uploaded images.
+ * 
+ * This function handles the HTTP request for generating an image from multiple uploaded images. 
+ * It validates the input, processes the images, and interacts with the AI generation service 
+ * to produce a new image. The generated image URL is then stored in the database along with the 
+ * paths of the uploaded images.
+ * 
+ * @param request - The HTTP request object containing the user ID and uploaded files.
+ * @param response - The HTTP response object used to send the generation result back to the client.
+ * @param db - An instance of the `ApiDatabase` class used to interact with the database for storing 
+ * generation information.
+ * 
+ * @returns A JSON response indicating the result of the image generation attempt.
+ */
 export async function generateFromMultipleImages(
   request: Request, 
   response: Response,
