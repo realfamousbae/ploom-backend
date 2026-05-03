@@ -2,7 +2,14 @@
 
 ### [CHANGELOG in russian language](./CHANGELOG_RU.md)
 
-### **`v.0.3.0` from 21.05.2026** (Current)
+### **`Unreleased`**
+- **Deployment Readiness**: Backend prepared for [Render](https://render.com). Configuration is now read from environment variables (`HOST`, `PORT`, `DATA_DIR`, `DB_FILE`, `FAL_API_KEY`) with `config.toml` as a fallback for local development.
+- **Persistent Storage Layout**: SQLite database and uploaded/generated image folders resolve under `DATA_DIR`, making the service compatible with mounted persistent disks.
+- **Build Pipeline**: Added `build` (`tsc`) and `serve` (`node dist/main.js`) npm scripts; the server now binds to `0.0.0.0` by default and accepts the full 1–65535 port range.
+- **Reproducible Installs**: Committed `package-lock.json` and removed it from `.gitignore`.
+- **Code Quality**: Typo fixes and small cleanup across API handlers, application bootstrap and shared types.
+
+### **`v.0.3.0` from 12.04.2026** (Latest release)
 - **AI 3D Generation**: Integrated `fal-ai/trellis` model for high-quality 3D asset generation from single and multiple images.
 - **Enhanced Documentation**: Completely rewritten README with detailed API specifications, project structure, and configuration guides.
 - **Profile Management**: Added `/api/v1/profile` endpoint to retrieve user data.
