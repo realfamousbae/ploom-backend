@@ -17,7 +17,7 @@ import type { Request, Response } from 'express';
 import { ApiDatabase } from '../../models/database.ts';
 import { Code, maxUploadingFileSize } from '../../types/types.ts';
 import { getConfig } from '../../config.ts';
-import { requestAIGeneration } from '../ai.ts';
+import { requestAIGeneration, serializeFalError } from '../ai.ts';
 import { getLogger } from '../../utils/logger.ts';
 
 import { readFileSync } from 'fs';
@@ -112,10 +112,10 @@ export async function generateFromSingleImage(
         generated_image_url: generatedImageUrl
       });
   } catch (error: any) {
-    logger.error('AI generation error', { error });
+    logger.error('AI generation error', { falError: serializeFalError(error) });
     response.status(Code.InternalServerError).json({
       message: 'An error occurred during image generation.',
-      error: error.message
+      error: error?.message ?? 'unknown'
     });
   }
 }
