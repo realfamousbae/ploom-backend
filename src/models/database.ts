@@ -14,8 +14,11 @@ import Database, { type Database as DatabaseType } from 'better-sqlite3';
 
 import { type Config } from '../config.ts';
 import { type Dictionary, stringifyWithRules } from '../types/types.ts';
+import { getLogger } from '../utils/logger.ts';
 
 import { readFileSync } from 'fs';
+
+const dbLogger = getLogger('db');
 
 /**
  * The RowType type is a union type that represents the possible types of rows that can be stored in the database.
@@ -127,17 +130,20 @@ export class ApiDatabase {
    * @returns An object of type T representing the selected row from the database. 
    */
   private selectRow<T extends RowType>(
-    data: T, 
-    table: Table, 
+    data: T,
+    table: Table,
     operator: Operator
   ): T {
     let equalities = this.makeQueryEqualities(data);
-    
-    const result = this.driver.prepare(
-      `SELECT * FROM ${table} WHERE ${equalities.join(` ${operator} `)}`
-    );
+    const sql = `SELECT * FROM ${table} WHERE ${equalities.join(` ${operator} `)}`;
 
-    return result.get() as T;
+    dbLogger.debug('select', { table, sql });
+
+    const result = this.driver.prepare(sql);
+    const row = result.get() as T;
+
+    dbLogger.debug('select result', { table, found: row !== undefined });
+    return row;
   }
 
   /**
@@ -164,10 +170,17 @@ export class ApiDatabase {
       values.push(value);
     }
 
-    const statement = this.driver.prepare(
-      `INSERT INTO ${table} (${fields.join(', ')}) VALUES (${values.join(', ')})`
-    );
-    statement.run();
+    const sql = `INSERT INTO ${table} (${fields.join(', ')}) VALUES (${values.join(', ')})`;
+    dbLogger.debug('insert', { table, sql });
+
+    const statement = this.driver.prepare(sql);
+    const result = statement.run();
+
+    dbLogger.info('row inserted', {
+      table,
+      lastInsertRowid: Number(result.lastInsertRowid),
+      changes: result.changes,
+    });
   }
 
   /**
@@ -182,16 +195,20 @@ export class ApiDatabase {
    * @returns A boolean indicating whether the row exists in the database.
    */
   private isRowExists<T extends RowType>(
-    row: T, 
+    row: T,
     table: Table,
     operator: Operator
   ): boolean {
     let equalities = this.makeQueryEqualities(row);
-    const query = this.driver.prepare(
-      `SELECT 1 FROM ${table} WHERE ${equalities.join(` ${operator} `)}`
-    );
-  
-    return query.get() !== undefined;
+    const sql = `SELECT 1 FROM ${table} WHERE ${equalities.join(` ${operator} `)}`;
+
+    dbLogger.debug('exists check', { table, sql });
+
+    const query = this.driver.prepare(sql);
+    const exists = query.get() !== undefined;
+
+    dbLogger.debug('exists result', { table, exists });
+    return exists;
   }
 
   /**
@@ -208,8 +225,10 @@ export class ApiDatabase {
   public constructor(config: Config) {
     this.config = config;
 
-    this.driver = new Database(this.config.database.file); 
+    dbLogger.info('opening database', { file: this.config.database.file });
+    this.driver = new Database(this.config.database.file);
     this.driver.pragma('journal_mode = WAL');
+    dbLogger.debug('journal_mode set to WAL');
   }
 
   /**
@@ -223,8 +242,10 @@ export class ApiDatabase {
    * statements to create the tables.
    */
   public checkTables(): void {
-    const initdriverQuery = readFileSync(this.config.database.schema, 'utf-8'); 
+    dbLogger.info('applying schema', { schema: this.config.database.schema });
+    const initdriverQuery = readFileSync(this.config.database.schema, 'utf-8');
     this.driver.exec(initdriverQuery);
+    dbLogger.info('schema applied');
   }
 
   /**

@@ -25,8 +25,11 @@ import { registerNewUser } from '../api/v1/register-new-user.ts';
 import { type Config } from '../config.ts';
 import { ApiDatabase } from '../models/database.ts';
 import { getImageStorage } from '../models/images.ts';
-import { handleMiddlewareErrors, isLoggingEnabled, logIncomingRequest } from '../types/errors.ts';
+import { handleMiddlewareErrors, logIncomingRequest } from '../types/errors.ts';
 import { apiPaths, checkPort } from '../types/types.ts';
+import { currentLogLevel, getLogger } from '../utils/logger.ts';
+
+const appLogger = getLogger('application');
 
 /**
  * The `Application` class encapsulates the Express application setup, 
@@ -100,7 +103,9 @@ export class Application {
 
     for (const dir of directories) {
       mkdirSync(dir, { recursive: true });
+      appLogger.debug('ensured runtime directory', { dir });
     }
+    appLogger.info('runtime directories ready', { count: directories.length });
   }
 
   /**
@@ -112,6 +117,7 @@ export class Application {
    * @param response - The response object used to send the JSON response back to the client.
    */
   private handleRoot(_request: Request, response: Response): void {
+    appLogger.debug('serving root info endpoint');
     response.json({
       message: 'Use POST-method on next api paths.',
       paths: apiPaths
@@ -136,6 +142,13 @@ export class Application {
    * runtime directories exist.
    */
   public constructor(config: Config) {
+    appLogger.info('initializing application', {
+      logLevel: currentLogLevel,
+      hostname: config.server.hostname,
+      port: config.server.port,
+      dataDir: config.paths.dataDir,
+    });
+
     this.app = express();
 
     this.config = config;
@@ -148,13 +161,10 @@ export class Application {
 
     this.db.checkTables();
 
-    // Log each incoming request (method + path + client IP).
-    // This helps to visibly trace incoming traffic during development.
-    if (isLoggingEnabled()) {
-      this.app.use(logIncomingRequest);
-    }
-
+    this.app.use(logIncomingRequest);
     this.app.use(handleMiddlewareErrors);
+
+    appLogger.info('application initialized');
   }
 
   /**
@@ -198,9 +208,13 @@ export class Application {
       }
     );
 
+    appLogger.info('registered routes', { paths: apiPaths });
+
     const hostname = this.config.server.hostname;
     this.app.listen(this.port, hostname, () => {
-      console.log(`Server started on http://${hostname}:${this.port}/.`);
+      appLogger.info('server listening', {
+        url: `http://${hostname}:${this.port}/`,
+      });
     });
   }
 }

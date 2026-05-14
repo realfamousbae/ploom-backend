@@ -15,8 +15,11 @@ import { resolve } from 'path';
 import { ApiDatabase } from '../../models/database.ts';
 import { MissingPropertyError } from '../../types/errors.ts';
 import { Code, getTypedParamsAs } from '../../types/types.ts';
+import { getLogger } from '../../utils/logger.ts';
 
 import type { User } from '../../models/database.ts';
+
+const logger = getLogger('register');
 
 /**
  * Registers a new user in the system.
@@ -36,6 +39,13 @@ import type { User } from '../../models/database.ts';
  * @returns A JSON response indicating the result of the user registration attempt.
  */
 export function registerNewUser(request: Request, response: Response, db: ApiDatabase): any {
+  logger.info('register attempt', {
+    query: request.query,
+    hasProfileImage: Boolean(request.file),
+    profileImageName: request.file?.originalname,
+    profileImageSize: request.file?.size,
+  });
+
   try {
     let user = getTypedParamsAs<User>(
       request.query,
@@ -47,20 +57,23 @@ export function registerNewUser(request: Request, response: Response, db: ApiDat
 
     // FIXME: And what will be if file is not exists?
     // May be later new api path will be provided for
-    // uploading only profile photo. 
-    // 
+    // uploading only profile photo.
+    //
     // Upd: Fixed, but still need to think about it.
     if (request.file) {
       user.profile_image_path = resolve(request.file.path);
+      logger.debug('attached profile image', { path: user.profile_image_path });
     }
 
     if (db.isUserExists({ email: user.email })) {
+      logger.warn('register conflict: email already exists', { email: user.email });
       return response.status(Code.Conflict).json({ message: 'User with provided email already exists.' });
     }
 
     db.insertUser(user);
     const dbOption = db.selectUser({ email: user.email });
 
+    logger.info('register success', { userId: dbOption.user_id, email: user.email });
     return response.status(Code.OK)
       .json({
         message: 'User successfully registered.',
@@ -68,9 +81,11 @@ export function registerNewUser(request: Request, response: Response, db: ApiDat
       });
   } catch (error) {
     if (error instanceof MissingPropertyError) {
+      logger.warn('register bad request', { message: error.message });
       return response.status(Code.BadRequest).json({ message: error.message });
     }
 
+    logger.error('register internal error', { error });
     return response.status(Code.InternalServerError).json({ message: 'Internal server error.' });
   }
 }

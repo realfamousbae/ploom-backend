@@ -28,8 +28,10 @@ import { MulterError } from 'multer';
 import type { NextFunction, Request, Response, } from 'express';
 
 import { Code } from './types.ts';
+import { getLogger } from '../utils/logger.ts';
 
-import { argv } from 'process';
+const httpLogger = getLogger('http');
+const middlewareLogger = getLogger('middleware');
 
 /**
  * Custom error class for invalid port numbers. This error is thrown 
@@ -72,27 +74,43 @@ export class MissingPropertyError extends Error {
 }
 
 /**
- * Checks if logging is enabled by looking for the `-l` flag in the command-line arguments.
- * This allows developers to easily enable or disable logging without changing the code.
- * 
- * @returns `true` if logging is enabled, `false` otherwise.
- */
-export function isLoggingEnabled(): boolean {
-  return "-l" in argv;
-}
-
-/**
- * Logs each incoming request (method + path + client IP).
- * This helps to visibly trace incoming traffic during development.
- * 
+ * Express middleware that logs the start and finish of every incoming request.
+ *
+ * On entry it emits an `info` line with the HTTP method, URL, client IP and user agent.
+ * On `finish` it emits a follow-up line with the status code and duration in milliseconds.
+ * Query parameters are logged at `debug` level so they are visible only when
+ * `LOG_LEVEL=debug` is set.
+ *
  * @param request - The incoming request to log.
- * @param _response - The response object, not used in this middleware but required by the signature.
+ * @param response - The response object; used to hook the `finish` event for timing.
  * @param next - Function to continue to the next middleware or route handler.
  */
-export function logIncomingRequest(request: Request, _response: Response, next: NextFunction): void {
-  console.log(
-    `[${new Date().toISOString()}] ${request.method} ${request.originalUrl} from ${request.ip}`
-  );
+export function logIncomingRequest(request: Request, response: Response, next: NextFunction): void {
+  const start = Date.now();
+
+  httpLogger.info(`-> ${request.method} ${request.originalUrl}`, {
+    ip: request.ip,
+    userAgent: request.headers['user-agent'],
+  });
+
+  if (request.query && Object.keys(request.query).length > 0) {
+    httpLogger.debug('request query', { query: request.query });
+  }
+
+  response.on('finish', () => {
+    const durationMs = Date.now() - start;
+    const meta = {
+      status: response.statusCode,
+      durationMs,
+    };
+    if (response.statusCode >= 500) {
+      httpLogger.error(`<- ${request.method} ${request.originalUrl}`, meta);
+    } else if (response.statusCode >= 400) {
+      httpLogger.warn(`<- ${request.method} ${request.originalUrl}`, meta);
+    } else {
+      httpLogger.info(`<- ${request.method} ${request.originalUrl}`, meta);
+    }
+  });
 
   next();
 }
@@ -119,9 +137,15 @@ export function handleMiddlewareErrors(
   next: NextFunction
 ): any {
   if (error instanceof MulterError) {
+    middlewareLogger.warn('multer error', {
+      code: error.code,
+      field: error.field,
+      message: error.message,
+    });
     return response.status(Code.BadRequest)
       .json({ message: `Multer error: ${error.message}` });
   }
 
+  middlewareLogger.error('unhandled middleware error', { error });
   next(error);
 }
