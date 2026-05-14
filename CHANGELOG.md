@@ -3,7 +3,9 @@
 ### [CHANGELOG in russian language](./CHANGELOG_RU.md)
 
 ### **`Unreleased`**
-- **AI Model Upgrade**: Switched the 3D generation backend from `fal-ai/trellis` to `fal-ai/trellis-2`. Both single- and multi-image flows now use the unified `fal-ai/trellis-2` endpoint with the `images` input array.
+- **AI Model Upgrade**: Switched the single-image 3D generation backend from `fal-ai/trellis` to `fal-ai/trellis-2`. The single-image flow now calls `fal-ai/trellis-2` with the `image_url` input and reads the result URL from `model_glb.url` (Trellis-2 names the output field `model_glb`, whereas Trellis v1 used `model_mesh`).
+- **Multi-Image Flow with Fallback**: The multi-image flow first attempts `fal-ai/trellis-2/multi` with the `image_urls` input. If that endpoint is not available (HTTP 404 / Not Found), it transparently falls back to the legacy `fal-ai/trellis/multi` model and reads the result from `model_mesh.url`. Fallback events are logged at `WARN` level with full fal.ai error context.
+- **Richer fal.ai Error Logging**: `ApiError`/`ValidationError` instances from `@fal-ai/client` are now logged with `status`, `requestId`, response `body` and `fieldErrors` instead of being collapsed to `"fetch failed"`. The HTTP response to clients remains a generic 500 with the high-level message.
 - **Deployment Readiness**: Backend prepared for [Render](https://render.com). Configuration is now read from environment variables (`HOST`, `PORT`, `DATA_DIR`, `DB_FILE`, `FAL_API_KEY`) with `config.toml` as a fallback for local development.
 - **Persistent Storage Layout**: SQLite database and uploaded/generated image folders resolve under `DATA_DIR`, making the service compatible with mounted persistent disks.
 - **Build Pipeline**: Added `build` (`tsc`) and `serve` (`node dist/main.js`) npm scripts; the server now binds to `0.0.0.0` by default and accepts the full 1–65535 port range.

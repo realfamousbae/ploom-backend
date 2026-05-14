@@ -1,11 +1,19 @@
 /**
  * @module src/api/ai
- * 
- * @description This module provides functions to interact with the AI service for generating 3D 
- * models based on input images. It includes functions for requesting AI generation for both single 
- * and multiple images. The functions handle uploading the images to a storage service and then 
- * sending the URLs to the AI service for processing. The AI service returns a URL for the generated 
- * model mesh based on the input images.
+ *
+ * @description This module provides functions to interact with the fal.ai service for
+ * generating 3D models from input images. It exposes two flows:
+ *
+ * - {@link requestAIGeneration} — single-image generation via `fal-ai/trellis-2`.
+ * - {@link requestMultiImageAIGeneration} — multi-image generation that first tries the
+ *   (currently undocumented) `fal-ai/trellis-2/multi` endpoint and transparently falls
+ *   back to the legacy `fal-ai/trellis/multi` model when the v2 multi endpoint is not
+ *   available (404 / Not Found).
+ *
+ * Output URLs come from `result.data.model_glb.url` for Trellis-2 and
+ * `result.data.model_mesh.url` for the legacy v1 multi fallback. Both flows are exposed
+ * to upstream callers as a single string URL so the public HTTP API contract does not
+ * change.
  */
 
 import { fal } from '@fal-ai/client';
@@ -15,21 +23,34 @@ import { getLogger } from '../utils/logger.ts';
 const logger = getLogger('ai');
 
 /**
- * Requests AI generation for a single image.
- * 
- * This function takes in the configuration object containing API credentials, the image data as 
- * a Buffer, the name of the file being uploaded, and the MIME type of the image. 
- * It uploads the image to the storage service and then sends the URL of the uploaded 
- * image to the AI service for processing. The AI service returns a URL for the generated 
- * model mesh based on the input image.
- * 
- * @param config - The configuration object containing API credentials.
- * @param imageData - The image data as a Buffer to be uploaded and processed by the AI model.
- * @param fileName - The name of the file being uploaded, used for storage and identification purposes.
- * @param mimeType - The MIME type of the image being uploaded, which helps the server understand 
- * the format of the file.
- * 
- * @returns A promise that resolves to the URL of the generated model mesh returned by the AI service.
+ * Best-effort extraction of diagnostic fields from a fal.ai SDK error. The SDK's
+ * {@link ApiError}/{@link ValidationError} classes attach `status`, `body` and
+ * `requestId` directly on the error instance, but the default JSON replacer in our
+ * logger strips everything except `name`/`message`/`stack`. This helper materialises
+ * those fields into a plain object so callers can log them.
+ */
+export function serializeFalError(err: any): Record<string, unknown> {
+  const body = err?.body ?? err?.response?.body;
+  return {
+    name: err?.name,
+    status: err?.status,
+    requestId: err?.requestId,
+    message: err?.message,
+    body,
+    fieldErrors: body?.detail,
+    stack: err?.stack,
+  };
+}
+
+/**
+ * Requests AI generation for a single image via `fal-ai/trellis-2`.
+ *
+ * @param config - Configuration object containing fal.ai credentials.
+ * @param imageData - Raw image bytes to upload.
+ * @param fileName - Original file name (used for the upload).
+ * @param mimeType - MIME type of the image being uploaded.
+ *
+ * @returns URL of the generated `.glb` model.
  */
 export async function requestAIGeneration(
   config: Config,
@@ -50,20 +71,17 @@ export async function requestAIGeneration(
   const subscribeStarted = Date.now();
   const result: any = await fal.subscribe('fal-ai/trellis-2', {
     input: {
-      images: [url]
-    }
+      image_url: url,
+    },
+    logs: true,
   });
   logger.info('fal.trellis-2 returned', { durationMs: Date.now() - subscribeStarted });
 
-  return result.data.model_mesh.url;
+  return result.data.model_glb.url;
 }
 
 /**
- * Interface representing the input for requesting multi-image AI generation. 
- * It includes the image data as a Buffer, the name of the file, and the MIME type of the image.
- * 
- * This structure is used to encapsulate the necessary information for uploading multiple images 
- * and requesting AI generation based on those images.
+ * Image input bundle for {@link requestMultiImageAIGeneration}.
  */
 export interface ImageInput {
   data: Buffer;
@@ -72,15 +90,17 @@ export interface ImageInput {
 }
 
 /**
- * Requests AI generation for multiple images. It uploads each image to the storage service and then
- * sends the URLs of the uploaded images to the AI service for processing. The AI service returns a 
- * URL for the generated model mesh based on the input images.
- * 
- * @param config - The configuration object containing API credentials.
- * @param images - An array of `ImageInput` objects, each containing the image data, file name, 
- * and MIME type for the images to be processed.
- * 
- * @returns A promise that resolves to the URL of the generated model mesh returned by the AI service.
+ * Requests AI generation for multiple images. First attempts the (currently undocumented)
+ * `fal-ai/trellis-2/multi` endpoint with the v2 `image_urls` input. If fal.ai reports the
+ * model as missing (HTTP 404 / Not Found), falls back to the legacy `fal-ai/trellis/multi`
+ * endpoint, which is known to be live. Any other error is rethrown so the handler can
+ * report it.
+ *
+ * @param config - Configuration object containing fal.ai credentials.
+ * @param images - Image bundles to upload and feed to the model.
+ *
+ * @returns URL of the generated 3D model (`.glb` for Trellis-2, `.glb`/legacy mesh URL
+ *          for the Trellis v1 multi fallback).
  */
 export async function requestMultiImageAIGeneration(
   config: Config,
@@ -106,13 +126,51 @@ export async function requestMultiImageAIGeneration(
     durationMs: Date.now() - uploadStarted,
   });
 
-  const subscribeStarted = Date.now();
-  const result: any = await fal.subscribe('fal-ai/trellis-2', {
-    input: {
-      images: urls
-    }
-  });
-  logger.info('fal.trellis-2 (multi) returned', { durationMs: Date.now() - subscribeStarted });
+  try {
+    const subscribeStarted = Date.now();
+    const result: any = await fal.subscribe('fal-ai/trellis-2/multi', {
+      input: {
+        image_urls: urls,
+      },
+      logs: true,
+    });
+    logger.info('fal.trellis-2/multi returned', { durationMs: Date.now() - subscribeStarted });
 
-  return result.data.model_mesh.url;
+    return result.data.model_glb?.url ?? result.data.model_mesh?.url;
+  } catch (err: any) {
+    if (isModelNotFoundError(err)) {
+      logger.warn('[generate:multi] trellis-2/multi unavailable, fell back to trellis/multi', {
+        falError: serializeFalError(err),
+      });
+
+      const subscribeStarted = Date.now();
+      const result: any = await fal.subscribe('fal-ai/trellis/multi', {
+        input: {
+          image_urls: urls,
+        },
+        logs: true,
+      });
+      logger.info('fal.trellis/multi (fallback) returned', { durationMs: Date.now() - subscribeStarted });
+
+      return result.data.model_mesh.url;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Returns true when an error from `@fal-ai/client` looks like "model endpoint does not
+ * exist". We only treat HTTP 404 / NotFoundError as such — any other status (422, 500,
+ * connection errors, etc.) is a real failure that must surface, not be masked by a
+ * silent fallback.
+ */
+function isModelNotFoundError(err: any): boolean {
+  if (err?.status === 404) {
+    return true;
+  }
+  const name = err?.name;
+  if (typeof name === 'string' && name.toLowerCase().includes('notfound')) {
+    return true;
+  }
+  return false;
 }
