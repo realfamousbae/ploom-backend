@@ -1,7 +1,7 @@
 # Project Tasks
 
 #### ✅ Done:
-- [x] Integrate AI (fal-ai/trellis) for 3D generation from single/multiple images.
+- [x] Integrate AI (fal-ai/trellis-2) for 3D generation from single/multiple images.
 - [x] Implement user authorization and registration.
 - [x] Create user profile endpoint and Bearer token support.
 - [x] Connect and configure SQLite relational database.

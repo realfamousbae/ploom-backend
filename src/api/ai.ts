@@ -48,12 +48,12 @@ export async function requestAIGeneration(
   logger.debug('image uploaded to fal storage', { url, durationMs: Date.now() - uploadStarted });
 
   const subscribeStarted = Date.now();
-  const result: any = await fal.subscribe('fal-ai/trellis', {
+  const result: any = await fal.subscribe('fal-ai/trellis-2', {
     input: {
-      image_url: url
+      images: [url]
     }
   });
-  logger.info('fal.trellis returned', { durationMs: Date.now() - subscribeStarted });
+  logger.info('fal.trellis-2 returned', { durationMs: Date.now() - subscribeStarted });
 
   return result.data.model_mesh.url;
 }
@@ -107,12 +107,12 @@ export async function requestMultiImageAIGeneration(
   });
 
   const subscribeStarted = Date.now();
-  const result: any = await fal.subscribe('fal-ai/trellis/multi', {
+  const result: any = await fal.subscribe('fal-ai/trellis-2', {
     input: {
-      image_urls: urls
+      images: urls
     }
   });
-  logger.info('fal.trellis/multi returned', { durationMs: Date.now() - subscribeStarted });
+  logger.info('fal.trellis-2 (multi) returned', { durationMs: Date.now() - subscribeStarted });
 
   return result.data.model_mesh.url;
 }
