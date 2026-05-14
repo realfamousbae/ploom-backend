@@ -15,6 +15,9 @@ import type { Request, Response } from 'express';
 
 import { ApiDatabase } from '../../models/database.ts';
 import { Code } from '../../types/types.ts';
+import { getLogger } from '../../utils/logger.ts';
+
+const logger = getLogger('profile');
 
 /**
  * Retrieves the profile information for a user based on their authentication token.
@@ -33,8 +36,11 @@ import { Code } from '../../types/types.ts';
  * @returns A JSON response containing the user's profile information or an error message.
  */
 export function getProfile(request: Request, response: Response, db: ApiDatabase): any {
+  logger.info('profile request');
+
   const authHeader = request.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    logger.warn('profile missing/invalid Authorization header');
     return response.status(Code.Unauthorized)
       .json({ message: 'Missing or invalid Authorization header.' });
   }
@@ -43,6 +49,7 @@ export function getProfile(request: Request, response: Response, db: ApiDatabase
   const userId = parseInt(token, 10);
 
   if (isNaN(userId)) {
+    logger.warn('profile invalid token format', { token });
     return response.status(Code.Unauthorized)
       .json({ message: 'Invalid token format.' });
   }
@@ -52,13 +59,16 @@ export function getProfile(request: Request, response: Response, db: ApiDatabase
       const dbOption = db.selectUser({ user_id: userId });
 
       const { password, ...userWithoutPassword } = dbOption;
+      logger.info('profile served', { userId });
       return response.status(Code.OK)
         .json(userWithoutPassword);
     }
 
+    logger.warn('profile not found', { userId });
     return response.status(Code.NotFound)
       .json({ message: 'User with provided data not found.' });
   } catch (error) {
+    logger.error('profile internal error', { error });
     return response.status(Code.InternalServerError)
       .json({ message: 'Internal server error.' });
   }

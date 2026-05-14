@@ -9,10 +9,13 @@
  */
 import { EmptyConfigFileError } from './types/errors.ts';
 import { joinWithCwd } from './types/types.ts';
+import { getLogger } from './utils/logger.ts';
 
 import { parse } from 'toml';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { isAbsolute, join } from 'path';
+
+const logger = getLogger('config');
 
 /**
  * The name of the configuration file. It is expected to be in the current working directory.
@@ -132,8 +135,10 @@ export function getConfig(): Config | never {
   let tomlConfig: TomlConfig = {};
 
   if (existsSync(tomlPath)) {
+    logger.info('loading config from TOML', { tomlPath });
     tomlConfig = parse(readFileSync(tomlPath, 'utf-8')) as TomlConfig;
   } else if (!process.env.FAL_API_KEY) {
+    logger.error('no config and no FAL_API_KEY env var; writing template config', { tomlPath });
     writeFileSync(
       tomlPath,
       `[server]
@@ -153,6 +158,8 @@ key="INSERT_API_KEY_HERE"`
       + 'at startup, it was created from scratch. Now you need to open the file '
       + `${tomlPath} and manually enter the data for the server to work correctly.`
     );
+  } else {
+    logger.info('no TOML config found; using environment variables');
   }
 
   const dataDir = process.env.DATA_DIR ?? './';
@@ -166,11 +173,21 @@ key="INSERT_API_KEY_HERE"`
 
   const apiKey = process.env.FAL_API_KEY ?? tomlConfig.api?.key ?? '';
   if (!apiKey || apiKey === 'INSERT_API_KEY_HERE') {
+    logger.error('FAL API key missing');
     throw new EmptyConfigFileError(
       'FAL API key is not configured. Set FAL_API_KEY environment variable '
       + `or provide it via api.key in ${tomlPath}.`
     );
   }
+
+  logger.debug('config resolved', {
+    hostname,
+    port,
+    dataDir,
+    dbFileRaw,
+    schemaRaw,
+    hasFalApiKey: Boolean(apiKey),
+  });
 
   return {
     server: { hostname, port },

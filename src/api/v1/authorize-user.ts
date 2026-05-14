@@ -14,10 +14,13 @@
 import type { Request, Response } from 'express';
 
 import { ApiDatabase } from '../../models/database.ts';
-import { isLoggingEnabled, MissingPropertyError } from '../../types/errors.ts';
+import { MissingPropertyError } from '../../types/errors.ts';
 import { Code, getTypedParamsAs } from '../../types/types.ts';
+import { getLogger } from '../../utils/logger.ts';
 
 import type { User } from '../../models/database.ts';
+
+const logger = getLogger('auth');
 
 /**
  * Authorizes a user based on their email and password.
@@ -36,9 +39,7 @@ import type { User } from '../../models/database.ts';
  * or an error message if not.
  */
 export function authorizeUser(request: Request, response: Response, db: ApiDatabase): any {
-  if (isLoggingEnabled()) {
-    console.log(`[POST /api/v1/authorize-user] Request body:`, request.body);
-  }
+  logger.info('authorize attempt', { query: request.query, body: request.body });
 
   try {
     const userData = getTypedParamsAs<User>(request.query, 'email', 'password');
@@ -53,23 +54,27 @@ export function authorizeUser(request: Request, response: Response, db: ApiDatab
 
       if (dataIsCorrect) {
         const { password, ...userWithoutPassword } = dbOption;
+        logger.info('authorize success', { userId: dbOption.user_id, email: userData.email });
         return response.status(Code.OK).json({
           message: 'User successfully authorized. All data is correct.',
           token: dbOption.user_id,
           user: userWithoutPassword
         });
       } else {
+        logger.warn('authorize failed: bad credentials', { email: userData.email });
         return response.status(Code.Unauthorized).json({ message: 'Authorization failed. Email or password is incorrect.' });
       }
     }
 
+    logger.warn('authorize failed: user not found', { email: userData.email });
     return response.status(Code.NotFound).json({ message: 'User with provided email does not exist.' });
   } catch (error) {
     if (error instanceof MissingPropertyError) {
+      logger.warn('authorize bad request', { message: error.message });
       return response.status(Code.BadRequest).json({ message: error.message });
     }
 
-    console.error(`[POST /api/v1/authorize-user] Internal error:`, error);
+    logger.error('authorize internal error', { error });
     return response.status(Code.InternalServerError).json({ message: 'Internal server error.' });
   }
 }

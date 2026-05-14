@@ -10,6 +10,9 @@
 
 import { fal } from '@fal-ai/client';
 import { type Config } from '../config.ts';
+import { getLogger } from '../utils/logger.ts';
+
+const logger = getLogger('ai');
 
 /**
  * Requests AI generation for a single image.
@@ -34,18 +37,23 @@ export async function requestAIGeneration(
   fileName: string,
   mimeType: string
 ): Promise<string> {
+  logger.info('single-image generation start', { fileName, mimeType, bytes: imageData.length });
   fal.config({
     credentials: config.api.key
   });
 
   const file = new File([new Uint8Array(imageData)], fileName, { type: mimeType });
+  const uploadStarted = Date.now();
   const url = await fal.storage.upload(file);
+  logger.debug('image uploaded to fal storage', { url, durationMs: Date.now() - uploadStarted });
 
+  const subscribeStarted = Date.now();
   const result: any = await fal.subscribe('fal-ai/trellis', {
     input: {
       image_url: url
     }
   });
+  logger.info('fal.trellis returned', { durationMs: Date.now() - subscribeStarted });
 
   return result.data.model_mesh.url;
 }
@@ -78,22 +86,33 @@ export async function requestMultiImageAIGeneration(
   config: Config,
   images: ImageInput[]
 ): Promise<string> {
+  logger.info('multi-image generation start', {
+    count: images.length,
+    totalBytes: images.reduce((acc, i) => acc + i.data.length, 0),
+  });
   fal.config({
     credentials: config.api.key
   });
 
+  const uploadStarted = Date.now();
   const uploadPromises = images.map(image => {
     const file = new File([new Uint8Array(image.data)], image.name, { type: image.mimeType });
     return fal.storage.upload(file);
   });
 
   const urls = await Promise.all(uploadPromises);
+  logger.debug('all images uploaded to fal storage', {
+    count: urls.length,
+    durationMs: Date.now() - uploadStarted,
+  });
 
+  const subscribeStarted = Date.now();
   const result: any = await fal.subscribe('fal-ai/trellis/multi', {
     input: {
       image_urls: urls
     }
   });
+  logger.info('fal.trellis/multi returned', { durationMs: Date.now() - subscribeStarted });
 
   return result.data.model_mesh.url;
 }

@@ -17,6 +17,9 @@
 
 import { Application } from './app/application.ts';
 import { getConfig } from './config.ts';
+import { getLogger } from './utils/logger.ts';
+
+const logger = getLogger('main');
 
 /**
  * The main function initializes the server and starts listening for incoming requests. 
@@ -25,10 +28,23 @@ import { getConfig } from './config.ts';
  * server to listen for incoming requests.
  */
 function main(): void {
+  logger.info('process boot', {
+    node: process.version,
+    pid: process.pid,
+    cwd: process.cwd(),
+  });
+
+  process.on('uncaughtException', (error) => {
+    logger.error('uncaughtException', { error });
+  });
+  process.on('unhandledRejection', (reason) => {
+    logger.error('unhandledRejection', { reason: reason instanceof Error ? reason : { reason } });
+  });
+
   const config = getConfig();
 
-  const server = new Application(config); 
+  const server = new Application(config);
   server.startListening();
 }
- 
+
 main();

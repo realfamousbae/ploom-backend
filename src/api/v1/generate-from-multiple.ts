@@ -21,9 +21,12 @@ import { ApiDatabase } from '../../models/database.ts';
 import { Code, maxUploadingFileSize } from '../../types/types.ts';
 import { getConfig } from '../../config.ts';
 import { requestMultiImageAIGeneration } from '../ai.ts';
+import { getLogger } from '../../utils/logger.ts';
 
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+
+const logger = getLogger('generate:multi');
 
 /**
  * Generates an image based on multiple uploaded images.
@@ -41,32 +44,42 @@ import { resolve } from 'path';
  * @returns A JSON response indicating the result of the image generation attempt.
  */
 export async function generateFromMultipleImages(
-  request: Request, 
+  request: Request,
   response: Response,
   db: ApiDatabase
 ): Promise<any> {
   const userIdParam = request.query['user_id'] as string;
   const files = request.files as Express.Multer.File[];
 
+  logger.info('multi-generation requested', {
+    query: request.query,
+    fileCount: files?.length ?? 0,
+    files: files?.map(f => ({ name: f.originalname, size: f.size, mimetype: f.mimetype })) ?? [],
+  });
+
   response.status(Code.BadRequest);
-  
+
   if (!userIdParam) {
-    return response.json({ 
+    logger.warn('missing user_id');
+    return response.json({
       message: 'To generate an image, you must pass a unique user ID as the user-id request parameter.'
     });
   }
   if (!request.files || files.length === 0) {
+    logger.warn('no files uploaded');
     return response.status(Code.BadRequest)
       .json({ message: 'No files uploaded.' });
   }
 
   const userId = Number.parseInt(userIdParam);
   if (Number.isNaN(userId)) {
+    logger.warn('user_id not numeric', { userIdParam });
     return response.json({ message: 'user_id parameter must be a numeric value.' });
   }
 
   for (const file of files) {
     if (file.size > maxUploadingFileSize) {
+      logger.warn('file too large', { name: file.originalname, size: file.size, max: maxUploadingFileSize });
       return response.status(Code.BadRequest)
         .json({ message: 'The size of each uploaded file must not exceed 50 megabytes.' });
     }
@@ -79,16 +92,26 @@ export async function generateFromMultipleImages(
       name: file.originalname,
       mimeType: file.mimetype
     }));
+    logger.debug('images read from disk', {
+      count: imagesInput.length,
+      totalBytes: imagesInput.reduce((acc, i) => acc + i.data.length, 0),
+    });
 
+    const startedAt = Date.now();
     const generatedImageUrl = await requestMultiImageAIGeneration(
       config,
       imagesInput
     );
-    
+    logger.info('AI multi-generation finished', {
+      userId,
+      durationMs: Date.now() - startedAt,
+      generatedImageUrl,
+    });
+
     const filesPaths = files.map(file => resolve(file.path));
-    
-    db.insertGeneration({ 
-      user_id: userId, 
+
+    db.insertGeneration({
+      user_id: userId,
       uploaded_images_paths: filesPaths,
       generated_image_path: generatedImageUrl
     });
@@ -99,7 +122,7 @@ export async function generateFromMultipleImages(
         generated_image_url: generatedImageUrl
       });
   } catch (error: any) {
-    console.error('AI Multi-Image Generation Error:', error);
+    logger.error('AI multi-generation error', { error });
     response.status(Code.InternalServerError).json({
       message: 'An error occurred during multi-image generation.',
       error: error.message
