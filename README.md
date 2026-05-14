@@ -8,7 +8,7 @@ The server-side component of the Ploom project, providing a robust API for user 
 
 ## 🚀 Overview
 
-**ploom-backend** is a Node.js application built with TypeScript that integrates advanced AI models to transform 2D images into 3D assets. It handles user authentication, profile management, and provides a seamless interface for the [fal.ai](https://fal.ai) Trellis model.
+**ploom-backend** is a Node.js application built with TypeScript that integrates advanced AI models to transform 2D images into 3D assets. It handles user authentication, profile management, and provides a seamless interface for the [fal.ai](https://fal.ai) Trellis-2 model.
 
 ### Key Features
 - **AI 3D Generation**: Generate high-quality 3D models from single or multiple images.
@@ -25,7 +25,7 @@ The server-side component of the Ploom project, providing a robust API for user 
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Framework**: [Express.js](https://expressjs.com/)
 - **Database**: [SQLite](https://sqlite.org/) (via `better-sqlite3`)
-- **AI Integration**: [fal.ai](https://fal.ai) (Trellis model)
+- **AI Integration**: [fal.ai](https://fal.ai) (Trellis-2 model)
 - **File Handling**: [Multer](https://github.com/expressjs/multer)
 
 ---

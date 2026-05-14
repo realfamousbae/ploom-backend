@@ -3,6 +3,7 @@
 ### [CHANGELOG in russian language](./CHANGELOG_RU.md)
 
 ### **`Unreleased`**
+- **AI Model Upgrade**: Switched the 3D generation backend from `fal-ai/trellis` to `fal-ai/trellis-2`. Both single- and multi-image flows now use the unified `fal-ai/trellis-2` endpoint with the `images` input array.
 - **Deployment Readiness**: Backend prepared for [Render](https://render.com). Configuration is now read from environment variables (`HOST`, `PORT`, `DATA_DIR`, `DB_FILE`, `FAL_API_KEY`) with `config.toml` as a fallback for local development.
 - **Persistent Storage Layout**: SQLite database and uploaded/generated image folders resolve under `DATA_DIR`, making the service compatible with mounted persistent disks.
 - **Build Pipeline**: Added `build` (`tsc`) and `serve` (`node dist/main.js`) npm scripts; the server now binds to `0.0.0.0` by default and accepts the full 1–65535 port range.
