@@ -8,7 +8,7 @@ The server-side component of the Ploom project, providing a robust API for user 
 
 ## 🚀 Overview
 
-**ploom-backend** is a Node.js application built with TypeScript that integrates advanced AI models to transform 2D images into 3D assets. It handles user authentication, profile management, and provides a seamless interface for the [fal.ai](https://fal.ai) Trellis-2 model.
+**ploom-backend** is a Node.js application built with TypeScript that integrates advanced AI models to transform 2D images into 3D assets. It handles user authentication, profile management, and provides a seamless interface for [fal.ai](https://fal.ai) Trellis models.
 
 ### Key Features
 - **AI 3D Generation**: Generate high-quality 3D models from single or multiple images.
@@ -25,7 +25,7 @@ The server-side component of the Ploom project, providing a robust API for user 
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Framework**: [Express.js](https://expressjs.com/)
 - **Database**: [SQLite](https://sqlite.org/) (via `better-sqlite3`)
-- **AI Integration**: [fal.ai](https://fal.ai) (Trellis-2 model)
+- **AI Integration**: [fal.ai](https://fal.ai) (`trellis-2` for single image, `trellis/multi` for multiple images)
 - **File Handling**: [Multer](https://github.com/expressjs/multer)
 
 ---
@@ -139,15 +139,17 @@ On startup the application creates the runtime directories (`DATA_DIR/public/pro
 
 #### 4. **AI Generation (Single Image)**
 `POST /api/v1/generate-from-single`
+
+Uses the `fal-ai/trellis-2` model.
 - **Query Parameters**:
   - `user_id` (number): Unique user ID.
 - **Form Data (Body)**:
   - `image` (file): Source image for generation.
-- **Success Response**: `200 OK`
+- **Success Response**: `200 OK` — `generated_image_url` points to the generated `.glb` model.
   ```json
   {
     "message": "Image generated successfully.",
-    "generated_image_url": "https://..."
+    "generated_image_url": "https://....glb"
   }
   ```
 

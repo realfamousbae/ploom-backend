@@ -112,7 +112,18 @@ export async function generateFromSingleImage(
         generated_image_url: generatedImageUrl
       });
   } catch (error: any) {
-    logger.error('AI generation error', { error });
+    logger.error('AI single-generation error', {
+      name: error?.name,
+      message: error?.message,
+      code: error?.code,
+      cause: {
+        name: error?.cause?.name,
+        message: error?.cause?.message,
+        code: error?.cause?.code,
+      },
+      body: error?.body ?? error?.response?.body,
+      stack: error?.stack,
+    });
     response.status(Code.InternalServerError).json({
       message: 'An error occurred during image generation.',
       error: error.message
